@@ -1,0 +1,182 @@
+import { useState } from 'react';
+import {
+  X,
+  Video,
+  Activity,
+  Eye,
+  Compass,
+  Ruler,
+  HardDrive,
+  Calendar,
+  Building2,
+  Sparkles,
+  ShieldAlert,
+  Route,
+  Clock,
+  PlayCircle,
+} from 'lucide-react';
+import type { ScoredCamera } from '@/types';
+import { CAMERA_TYPE_LABELS } from '@/data/cameras';
+import { compassLabel } from '@/lib/geo';
+import CameraFootageModal from '@/components/CameraFootageModal';
+
+interface Props {
+  camera: ScoredCamera | null;
+  onClose: () => void;
+}
+
+export default function CameraDetail({ camera, onClose }: Props) {
+  const [footageOpen, setFootageOpen] = useState(false);
+
+  if (!camera) return null;
+
+  const rows = [
+    { icon: Building2, label: 'Operator', value: camera.operator },
+    { icon: Video, label: 'Type', value: CAMERA_TYPE_LABELS[camera.type] },
+    { icon: Route, label: 'Road name', value: camera.roadName },
+    { icon: Clock, label: 'Active hours', value: camera.activeHours },
+    {
+      icon: Activity,
+      label: 'Recording at incident time',
+      value: camera.availableAtIncidentTime ? 'Yes (simulated)' : 'Unlikely',
+    },
+    { icon: Ruler, label: 'Distance from incident', value: `${camera.distance} m` },
+    { icon: Eye, label: 'Field of view', value: `${camera.fov}°` },
+    {
+      icon: Compass,
+      label: 'Direction',
+      value: `${compassLabel(camera.heading)} (${camera.heading}°)`,
+    },
+    { icon: Ruler, label: 'Coverage radius', value: `${camera.coverageRadius} m` },
+    { icon: HardDrive, label: 'Resolution', value: camera.resolution },
+    { icon: Calendar, label: 'Installed', value: camera.installed },
+    { icon: HardDrive, label: 'Retention', value: `${camera.retentionDays} days` },
+  ];
+
+  return (
+    <div className="animate-fade-in flex h-full flex-col">
+      <div className="flex items-start justify-between border-b border-white/5 px-4 py-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <Video size={16} className="text-action-400" />
+            <h3 className="text-sm font-semibold text-slate-100">{camera.name}</h3>
+          </div>
+          <p className="mt-0.5 font-mono text-[11px] text-slate-500">{camera.id}</p>
+        </div>
+        <button onClick={onClose} className="btn-ghost -mr-1.5 p-1.5">
+          <X size={16} />
+        </button>
+      </div>
+
+      <div className="scroll-thin flex-1 overflow-y-auto px-4 py-4">
+        {/* status & score */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="card p-3">
+            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-slate-500">
+              <Activity size={11} /> Status
+            </div>
+            <p
+              className={`mt-1 text-sm font-semibold ${
+                camera.active ? 'text-pri-low' : 'text-pri-high'
+              }`}
+            >
+              {camera.active ? 'Active' : 'Offline'}
+            </p>
+          </div>
+          <div className="card p-3">
+            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-slate-500">
+              <Sparkles size={11} className="text-ai-400" /> Priority score
+            </div>
+            <p className="mt-1 text-sm font-semibold text-slate-100">
+              {camera.score}%
+              <span className="ml-1 text-[11px] font-normal text-slate-500">
+                {camera.priority} priority
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* metadata grid */}
+        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+          {rows.map((r) => (
+            <div key={r.label} className="flex items-start gap-2">
+              <r.icon size={14} className="mt-0.5 shrink-0 text-slate-500" />
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-slate-500">
+                  {r.label}
+                </p>
+                <p className="truncate text-sm text-slate-200">{r.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* transparent score breakdown */}
+        <div className="mt-5">
+          <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ai-300">
+            <ShieldAlert size={12} /> Why this score
+          </div>
+
+          <p className="mt-2 rounded-md bg-ai-500/5 px-2.5 py-2 text-xs leading-relaxed text-slate-300 ring-1 ring-ai-500/15">
+            {camera.explanation}
+          </p>
+
+          <div className="mt-3 space-y-2.5">
+            {camera.factors.map((f) => (
+              <div key={f.key}>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-300">
+                    {f.label}{' '}
+                    <span className="text-slate-500">({f.weight}%)</span>
+                  </span>
+                  <span className="font-mono text-slate-400">
+                    {f.points.toFixed(1)}/{f.weight}
+                  </span>
+                </div>
+                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+                  <div
+                    className="h-full rounded-full bg-ai-500"
+                    style={{ width: `${Math.round(f.value * 100)}%` }}
+                  />
+                </div>
+                <p className="mt-1 flex items-start gap-1.5 text-[11px] text-slate-500">
+                  <Sparkles size={10} className="mt-0.5 shrink-0 text-ai-400/70" />
+                  {f.note}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-3 text-[10px] leading-relaxed text-slate-500">
+            Simulated priority is a review-order suggestion only. It is not proof,
+            certainty, or an indication that anything was recorded.
+          </p>
+        </div>
+
+        {/* demo footage */}
+        <div className="mt-5">
+          <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-slate-500">
+            <Video size={12} /> Footage
+          </div>
+          <button
+            onClick={() => setFootageOpen(true)}
+            className="card card-hover mt-2 flex w-full items-center gap-3 overflow-hidden p-3 text-left"
+          >
+            <div className="relative flex h-14 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md bg-ink-900">
+              <div className="absolute inset-0 bg-gradient-to-br from-ink-700/40 to-ink-900" />
+              <PlayCircle size={22} className="relative text-slate-300" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-200">View Demo Footage</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">
+                Opens a simulated player · no real recording exists
+              </p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <CameraFootageModal camera={footageOpen ? camera : null} onClose={() => setFootageOpen(false)} />
+    </div>
+  );
+}

@@ -1,0 +1,23 @@
+SUPABASE / GOOGLE LOGIN FINAL SETUP
+
+1. Copy .env.example to .env
+2. Put your real Supabase publishable/anon key in VITE_SUPABASE_ANON_KEY.
+3. Supabase Dashboard > Authentication > URL Configuration:
+   Site URL:
+   http://localhost:5173
+   Redirect URL:
+   http://localhost:5173
+   Also add your deployed URL, e.g. https://YOUR-DOMAIN.com
+4. Google Cloud OAuth client:
+   Authorized redirect URI MUST be:
+   https://xjgugrorkufsqyoptfue.supabase.co/auth/v1/callback
+   Do not append the Google client ID to this URL.
+5. Supabase Authentication > Sign In / Providers > Google:
+   Enable Google and paste the Google Client ID and Client Secret.
+6. Run:
+   npm install --legacy-peer-deps
+   npm run dev
+7. Open the exact Vite URL shown in the terminal (normally http://localhost:5173).
+
+The app now explicitly exchanges Google's one-time PKCE code for a Supabase
+session and only opens the dashboard after a real Supabase session exists.
